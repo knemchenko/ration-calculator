@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Розрахунок добового раціону</title>
+    <title>Калькулятор добового раціону</title>
     <style>
         /* -------- Light theme -------- */
         :root {
@@ -23,6 +23,11 @@
             color: #212529;
         }
         h1 { color: var(--primary); margin-bottom: .75rem; text-align: center; }
+        .description {
+            margin: 0 0 1.5rem;
+            line-height: 1.55;
+            font-size: 0.95rem;
+        }
         .card {
             background: var(--card-bg);
             padding: 2rem 2.5rem;
@@ -57,7 +62,24 @@
 </head>
 <body>
 <div class="card">
-    <h1>Розрахунок добового раціону</h1>
+    <h1>Калькулятор добового раціону</h1>
+
+    <!-- Доданий опис -->
+    <p class="description">
+        Цей калькулятор створений для розрахунку добового раціону (білки, жири, вуглеводи) за мотивами цього
+        <a href="https://www.youtube.com/watch?v=aA245Ax4ZTQ" target="_blank" rel="noopener">
+            відео</a>.<br><br>
+		Вхідні дані - вага, зріст, вік, стать, спосіб життя, % дефіциту калорій<br>
+		(% дефіциту калорій треба вказувати, якщо ви плануєте схуднути) <br><br>
+        Алгоритм розрахунку: <br>
+        1) обчислюємо <strong>BMR</strong> (базовий обмін) за формулою Гарріса-Бенедикта; <br>
+        2) множимо на коефіцієнт фізичної активності — отримуємо <strong>TDEE</strong>; <br>
+        3) віднімаємо вибраний&nbsp;% дефіциту калорій; <br>
+        4) розподіляємо калорії між білками, жирами та вуглеводами за заданими
+        коефіцієнтами (за замовчуванням&nbsp;2&nbsp;г/кг білка та&nbsp;0,8&nbsp;г/кг жиру). <br>
+        Результат — грамовка макронутрієнтів і докладний розрахунок усіх кроків.
+    </p>
+
     <form id="macroForm">
         <div class="group">
             <label for="weight">Вага (кг)</label>
@@ -147,9 +169,9 @@
         // 6. Render output
         results.innerHTML = `
             <h2>Результати</h2>
-            <div class="step"><strong>Крок 1 – BMR (базовий обмін):</strong> ${round(BMR)} ккал&nbsp;|&nbsp;<em>базовий обмін</em></div>
-            <div class="step"><strong>Крок 2 – TDEE (загальні цільові витрати BMR * коеф. активності):</strong> ${round(TDEE)} ккал&nbsp;|&nbsp;<em>BMR × ${act}</em></div>
-            <div class="step"><strong>Крок 3 – Цільові калорії:</strong> ${round(target)} ккал&nbsp;|&nbsp;<em>-${deficit}%</em></div>
+            <div class="step"><strong>Крок 1 – BMR (базовий обмін):</strong> ${round(BMR)} ккал</div>
+            <div class="step"><strong>Крок 2 – TDEE (BMR × коеф. активності):</strong> ${round(TDEE)} ккал (×${act})</div>
+            <div class="step"><strong>Крок 3 – Цільові калорії:</strong> ${round(target)} ккал (-${deficit}%)</div>
             <div class="step"><strong>Крок 4 – Білок:</strong> ${round(proteinG)} г → ${round(proteinCal)} ккал (${pFactor} г/кг)</div>
             <div class="step"><strong>Крок 5 – Жири:</strong> ${round(fatG)} г → ${round(fatCal)} ккал (${fFactor} г/кг)</div>
             <div class="step"><strong>Крок 6 – Вуглеводи:</strong> ${round(carbsG)} г → ${round(carbsCal)} ккал (решта)</div>
