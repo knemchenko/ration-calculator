@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Розрахунок добового раціону</title>
+    <style>
+        /* -------- Light theme -------- */
+        :root {
+            --primary: #005fb8;
+            --bg: #ffffff;
+            --card-bg: #fafafa;
+            --radius: 0.75rem;
+        }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            color: #212529;
+        }
+        h1 { color: var(--primary); margin-bottom: .75rem; text-align: center; }
+        .card {
+            background: var(--card-bg);
+            padding: 2rem 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            max-width: 620px; width: 100%;
+        }
+        .group { display: flex; flex-direction: column; margin-bottom: 1.25rem; }
+        .group label { font-weight: 600; margin-bottom: .35rem; }
+        .group input, .group select {
+            padding: .6rem .75rem;
+            border: 1px solid #d0d7de;
+            border-radius: var(--radius);
+            font-size: 1rem;
+        }
+        button {
+            background: var(--primary); color: #fff; border: none;
+            padding: .8rem 1.4rem; border-radius: var(--radius);
+            font-size: 1rem; cursor: pointer; transition: background .2s ease;
+        }
+        button:hover { background: #004c91; }
+        .results { margin-top: 2rem; line-height: 1.55; }
+        .results h2 { margin: .6rem 0 1rem; color: var(--primary); }
+        .step {
+            background: #eef3f8; padding: .9rem 1.1rem;
+            border-radius: var(--radius); margin-bottom: .65rem;
+            font-family: "Fira Mono", monospace; font-size: .92rem;
+        }
+        ul { margin: 0; padding-left: 1.2rem; }
+        li { margin-bottom: .4rem; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Розрахунок добового раціону</h1>
+    <form id="macroForm">
+        <div class="group">
+            <label for="weight">Вага (кг)</label>
+            <input type="number" id="weight" min="1" step="0.1" required>
+        </div>
+        <div class="group">
+            <label for="height">Зріст (см)</label>
+            <input type="number" id="height" min="1" step="0.1" required>
+        </div>
+        <div class="group">
+            <label for="age">Вік (років)</label>
+            <input type="number" id="age" min="1" step="1" required>
+        </div>
+        <div class="group">
+            <label>Стать</label>
+            <select id="sex" required>
+                <option value="male">Чоловік</option>
+                <option value="female">Жінка</option>
+            </select>
+        </div>
+        <div class="group">
+            <label for="activity">Фізична активність</label>
+            <select id="activity">
+                <option value="1.2">Сидячий спосіб життя (1.2)</option>
+                <option value="1.375">Легка: 1-3 тренування/тиждень (1.375)</option>
+                <option value="1.55">Помірна: 3-5 тренувань/тиждень (1.55)</option>
+                <option value="1.725">Висока: 6-7 тренувань/тиждень (1.725)</option>
+                <option value="1.9">Дуже висока: 2 тренування/день або важка праця (1.9)</option>
+            </select>
+        </div>
+        <div class="group">
+            <label for="deficit">Зменшення калорій, %</label>
+            <input type="number" id="deficit" min="0" max="50" step="1" value="0" required>
+        </div>
+        <div class="group">
+            <label for="proteinFactor">Білок (г/кг маси тіла)</label>
+            <input type="number" id="proteinFactor" min="0.5" max="3" step="0.1" value="2.0" required>
+        </div>
+        <div class="group">
+            <label for="fatFactor">Жир (г/кг маси тіла)</label>
+            <input type="number" id="fatFactor" min="0.3" max="2" step="0.1" value="0.8" required>
+        </div>
+        <button type="submit">Розрахувати</button>
+    </form>
+
+    <div id="results" class="results" style="display:none;"></div>
+</div>
+
+<script>
+(function () {
+    const form = document.getElementById('macroForm');
+    const results = document.getElementById('results');
+    const round = (n, d = 1) => parseFloat(n.toFixed(d));
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        // 1. Зчитування вхідних даних
+        const w = parseFloat(document.getElementById('weight').value);
+        const h = parseFloat(document.getElementById('height').value);
+        const age = parseInt(document.getElementById('age').value, 10);
+        const sex = document.getElementById('sex').value;
+        const act = parseFloat(document.getElementById('activity').value);
+        const deficit = parseFloat(document.getElementById('deficit').value);
+        const pFactor = parseFloat(document.getElementById('proteinFactor').value);
+        const fFactor = parseFloat(document.getElementById('fatFactor').value);
+
+        // 2. BMR
+        const BMR = sex === 'male'
+            ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * age
+            : 447.593 + 9.247 * w + 3.098 * h - 4.330 * age;
+
+        // 3. TDEE
+        const TDEE = BMR * act;
+
+        // 4. Target calories
+        const target = TDEE * (1 - deficit / 100);
+
+        // 5. Macros
+        const proteinG = w * pFactor;
+        const proteinCal = proteinG * 4;
+        const fatG = w * fFactor;
+        const fatCal = fatG * 9;
+        const carbsCal = Math.max(0, target - proteinCal - fatCal);
+        const carbsG = carbsCal / 4;
+
+        // 6. Render output
+        results.innerHTML = `
+            <h2>Результати</h2>
+            <div class="step"><strong>Крок 1 – BMR (базовий обмін):</strong> ${round(BMR)} ккал&nbsp;|&nbsp;<em>базовий обмін</em></div>
+            <div class="step"><strong>Крок 2 – TDEE (загальні цільові витрати BMR * коеф. активності):</strong> ${round(TDEE)} ккал&nbsp;|&nbsp;<em>BMR × ${act}</em></div>
+            <div class="step"><strong>Крок 3 – Цільові калорії:</strong> ${round(target)} ккал&nbsp;|&nbsp;<em>-${deficit}%</em></div>
+            <div class="step"><strong>Крок 4 – Білок:</strong> ${round(proteinG)} г → ${round(proteinCal)} ккал (${pFactor} г/кг)</div>
+            <div class="step"><strong>Крок 5 – Жири:</strong> ${round(fatG)} г → ${round(fatCal)} ккал (${fFactor} г/кг)</div>
+            <div class="step"><strong>Крок 6 – Вуглеводи:</strong> ${round(carbsG)} г → ${round(carbsCal)} ккал (решта)</div>
+            <h2>Підсумок</h2>
+            <ul>
+                <li><strong>Білки:</strong> ${round(proteinG)} г/день</li>
+                <li><strong>Жири:</strong> ${round(fatG)} г/день</li>
+                <li><strong>Вуглеводи:</strong> ${round(carbsG)} г/день</li>
+            </ul>`;
+
+        results.style.display = 'block';
+    });
+})();
+</script>
+</body>
+</html>
